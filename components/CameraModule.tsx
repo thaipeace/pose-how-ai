@@ -1,15 +1,79 @@
 "use client";
 
+import clsx from "clsx";
 import { useState, useRef, useEffect } from "react";
+import SampleGallery from "./SampleGallery";
 
 export default function CameraModule() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [isStreaming, setIsStreaming] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
   // State lưu góc xoay vật lý (0, 90, -90)
   const [physicalAngle, setPhysicalAngle] = useState(0);
+
+  const [analysisResult, setAnalysisResult] = useState<
+    { light: string[]; subject: string[]; tech: string[] } | string | null
+  >(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showSamples, setShowSamples] = useState(false);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Kiểm tra định dạng
+    if (!file.type.startsWith("image/")) {
+      alert("Vui lòng chọn tệp hình ảnh.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+
+      // Dừng camera nếu đang bật trước khi hiện ảnh từ gallery
+      if (videoRef.current?.srcObject) {
+        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+        tracks.forEach((track) => track.stop());
+        setIsStreaming(false);
+      }
+
+      setCapturedImage(base64); // Hiển thị ảnh vừa chọn lên khung preview
+      setAnalysisResult(null); // Xóa kết quả phân tích cũ
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAnalyze = async () => {
+    if (!capturedImage) return;
+
+    setIsAnalyzing(true);
+    setAnalysisResult(null);
+
+    try {
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: capturedImage }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setAnalysisResult(data.advice.analysis);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error) {
+      setAnalysisResult("Không thể kết nối đến server.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   // Lắng nghe cảm biến chuyển động
   useEffect(() => {
@@ -38,6 +102,7 @@ export default function CameraModule() {
 
   const startCamera = async () => {
     setCapturedImage(null);
+    setAnalysisResult(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -116,46 +181,158 @@ export default function CameraModule() {
             className="w-full h-full object-contain bg-black"
           />
         )}
+
+        {/* OVERLAY LOADING: Cực kỳ quan trọng để ko cảm thấy đơ */}
+        {isAnalyzing && (
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center text-white p-6 text-center animate-in fade-in">
+            <div className="w-12 h-12 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-lg font-bold">Đang phân tích ảnh...</p>
+            <p className="text-xs text-gray-400 mt-2">
+              Gemini đang xem xét ánh sáng và bố cục của bạn
+            </p>
+          </div>
+        )}
+
+        {/* FALLBACK KHI LỖI */}
+        {analysisResult == "Không thể kết nối đến server." && (
+          <div className="absolute inset-0 bg-rose-900/90 flex flex-col items-center justify-center text-white p-6 text-center">
+            <span className="text-4xl mb-2">⚠️</span>
+            <p className="font-bold">Kết nối thất bại</p>
+            <p className="text-sm opacity-80 mb-4">
+              Sóng yếu hoặc Server quá tải.
+            </p>
+            <button
+              onClick={handleAnalyze}
+              className="px-6 py-2 bg-white text-rose-900 rounded-full font-bold active:scale-95"
+            >
+              Thử lại
+            </button>
+          </div>
+        )}
       </div>
 
       <canvas ref={canvasRef} className="hidden" />
 
-      <div className="space-y-3">
+      {analysisResult && typeof analysisResult !== "string" && (
+        <div className="mt-4 space-y-4 p-5 bg-white border border-gray-100 rounded-3xl shadow-xl animate-in fade-in slide-in-from-bottom-4">
+          <h3 className="text-lg font-bold text-gray-800 border-b pb-2">
+            💡 Hướng dẫn chụp đẹp
+          </h3>
+
+          {/* Nhóm Ánh sáng */}
+          <div>
+            <h4 className="font-bold text-amber-600 text-sm uppercase">
+              ☀️ Ánh sáng
+            </h4>
+            <ul className="list-disc list-inside text-gray-600 text-sm ml-2">
+              {analysisResult.light.map((item: string, i: number) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Nhóm Chủ thể */}
+          <div>
+            <h4 className="font-bold text-blue-600 text-sm uppercase">
+              🧍 Chủ thể
+            </h4>
+            <ul className="list-disc list-inside text-gray-600 text-sm ml-2">
+              {analysisResult.subject.map((item: string, i: number) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Nhóm Thông số kỹ thuật */}
+          <div>
+            <h4 className="font-bold text-emerald-600 text-sm uppercase">
+              ⚙️ Thông số kỹ thuật
+            </h4>
+            <ul className="list-disc list-inside text-gray-600 text-sm ml-2 bg-gray-50 p-2 rounded-lg">
+              {analysisResult.tech.map((item: string, i: number) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      <div
+        className={clsx("space-y-3", {
+          "pointer-events-none opacity-50 bg-gray-200": isAnalyzing,
+        })}
+      >
+        {/* Input file ẩn */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept="image/*"
+          onChange={handleFileUpload}
+        />
+
         {isStreaming ? (
-          <button
-            onClick={takePhoto}
-            className="w-full py-4 bg-rose-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-transform"
-          >
-            📸 Chụp Ảnh
-          </button>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={takePhoto}
+              className="w-full py-4 bg-rose-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-transform"
+            >
+              📸 Chụp Ảnh
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="py-4 bg-gray-800 text-white font-bold rounded-2xl flex items-center justify-center gap-2"
+            >
+              🖼️ Thư viện
+            </button>
+          </div>
         ) : capturedImage ? (
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={startCamera}
               className="py-4 bg-gray-200 text-gray-800 font-bold rounded-2xl"
             >
-              🔄 Chụp lại
+              🔄 Làm lại
             </button>
             <button
-              onClick={() => alert("Sẵn sàng phân tích!")}
-              className="py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200"
+              onClick={() => setShowSamples(true)}
+              className="text-xs font-bold py-2 px-4 bg-white border border-gray-200 shadow-sm rounded-full text-indigo-600 active:scale-95 transition-all"
             >
-              ✨ Phân tích
+              🖼️ Xem hình mẫu
             </button>
+            {!analysisResult && (
+              <button
+                onClick={handleAnalyze}
+                className="py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200"
+              >
+                ✨ Phân tích
+              </button>
+            )}
           </div>
         ) : (
-          <button
-            onClick={startCamera}
-            className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl"
-          >
-            Mở Camera
-          </button>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={startCamera}
+              className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl"
+            >
+              Mở Camera
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="py-4 bg-gray-800 text-white font-bold rounded-2xl flex items-center justify-center gap-2"
+            >
+              🖼️ Thư viện
+            </button>
+          </div>
         )}
       </div>
 
       <p className="text-center text-[10px] text-gray-400 uppercase tracking-widest font-medium">
         Hỗ trợ Auto-Rotate Canvas
       </p>
+
+      {/* HIỂN THỊ MODAL KHI CẦN */}
+      {showSamples && <SampleGallery onClose={() => setShowSamples(false)} />}
     </div>
   );
 }
