@@ -20,6 +20,7 @@ export default function CameraModule() {
   >(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showSamples, setShowSamples] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -294,12 +295,14 @@ export default function CameraModule() {
             >
               🔄 Làm lại
             </button>
-            <button
-              onClick={() => setShowSamples(true)}
-              className="text-xs font-bold py-2 px-4 bg-white border border-gray-200 shadow-sm rounded-full text-indigo-600 active:scale-95 transition-all"
-            >
-              🖼️ Xem hình mẫu
-            </button>
+            {analysisResult && (
+              <button
+                onClick={() => setShowSamples(true)}
+                className="text-xs font-bold py-2 px-4 bg-white border border-gray-200 shadow-sm rounded-full text-indigo-600 active:scale-95 transition-all"
+              >
+                🖼️ Xem hình mẫu
+              </button>
+            )}
             {!analysisResult && (
               <button
                 onClick={handleAnalyze}
@@ -332,7 +335,12 @@ export default function CameraModule() {
       </p>
 
       {/* HIỂN THỊ MODAL KHI CẦN */}
-      {showSamples && <SampleGallery onClose={() => setShowSamples(false)} />}
+      {showSamples && (
+        <SampleGallery
+          analysisResult={analysisResult}
+          onClose={() => setShowSamples(false)}
+        />
+      )}
     </div>
   );
 }

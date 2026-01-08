@@ -1,35 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface SampleGalleryProps {
+  analysisResult: any;
   onClose: () => void;
 }
 
-export default function SampleGallery({ onClose }: SampleGalleryProps) {
-  // Giả lập danh sách ảnh mẫu
-  const samples = [
-    {
-      id: 1,
-      url: "https://picsum.photos/seed/p1/400/600",
-      title: "Chân dung ngược sáng",
-    },
-    {
-      id: 2,
-      url: "https://picsum.photos/seed/p2/400/600",
-      title: "Bố cục 1/3",
-    },
-    {
-      id: 3,
-      url: "https://picsum.photos/seed/p3/400/600",
-      title: "Chụp kiến trúc",
-    },
-    {
-      id: 4,
-      url: "https://picsum.photos/seed/p4/400/600",
-      title: "Chụp sản phẩm",
-    },
-  ];
+export default function SampleGallery({
+  onClose,
+  analysisResult,
+}: SampleGalleryProps) {
+  const [img, setImg] = useState();
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGeneratePose = async () => {
+    setIsGenerating(true);
+    try {
+      const res = await fetch("/api/generate-pose", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pose_summary: analysisResult,
+        }),
+      });
+
+      console.log("Pose generation response:", res);
+      setImg(await res.json());
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  useEffect(() => {
+    handleGeneratePose();
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -54,22 +59,13 @@ export default function SampleGallery({ onClose }: SampleGalleryProps) {
         </div>
 
         {/* Grid hiển thị ảnh mẫu */}
-        <div className="grid grid-cols-2 gap-4">
-          {samples.map((img) => (
-            <div key={img.id} className="group relative">
-              <div className="aspect-[2/3] w-full bg-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                <img
-                  src={img.url}
-                  alt={img.title}
-                  loading="lazy" // Lazy load chuẩn trình duyệt
-                  className="w-full h-full object-cover transition-transform group-active:scale-95"
-                />
-              </div>
-              <p className="mt-2 text-xs font-medium text-gray-500 text-center">
-                {img.title}
-              </p>
-            </div>
-          ))}
+        <div className="aspect-[2/3] w-full bg-gray-100 rounded-2xl overflow-hidden shadow-sm">
+          {/* <img
+            src={img.url}
+            alt={img.url}
+            loading="lazy" // Lazy load chuẩn trình duyệt
+            className="w-full h-full object-cover transition-transform group-active:scale-95"
+          /> */}
         </div>
 
         <button
