@@ -21,12 +21,13 @@ export default function SampleGallery({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          pose_summary: analysisResult,
+          pose_summary: analysisResult.subject.join(""),
         }),
       });
 
-      console.log("Pose generation response:", res);
-      setImg(await res.json());
+      const data = await res.json();
+      console.log("Pose generation response:", data);
+      setImg(data.imageUrl);
     } finally {
       setIsGenerating(false);
     }
@@ -60,12 +61,12 @@ export default function SampleGallery({
 
         {/* Grid hiển thị ảnh mẫu */}
         <div className="aspect-[2/3] w-full bg-gray-100 rounded-2xl overflow-hidden shadow-sm">
-          {/* <img
-            src={img.url}
-            alt={img.url}
+          <img
+            src={img || "/loading-spinner.gif"}
+            alt={img ? "Generated Pose" : "Loading"}
             loading="lazy" // Lazy load chuẩn trình duyệt
             className="w-full h-full object-cover transition-transform group-active:scale-95"
-          /> */}
+          />
         </div>
 
         <button

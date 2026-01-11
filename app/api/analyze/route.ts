@@ -26,7 +26,10 @@ export async function POST(req: NextRequest) {
     // Khởi tạo Chat Session mới
     activeChatSession = model.startChat({
       history: [],
-      generationConfig: { maxOutputTokens: 200 },
+      generationConfig: {
+        maxOutputTokens: 5000,
+        temperature: 0.2,
+      },
     });
 
     // 2. Resize + Compress dùng Sharp
@@ -40,19 +43,14 @@ export async function POST(req: NextRequest) {
 
     // 3. Xây dựng Prompt và gọi Gemini Vision
     const prompt = `
-      Bạn là một chuyên gia nhiếp ảnh chuyên nghiệp. 
-      Hãy phân tích ảnh này và đưa ra hướng dẫn cụ thể để cải thiện bức ảnh tiếp theo.
-
-      Yêu cầu bắt buộc:
-      1. Nội dung tập trung vào hành động "PHẢI LÀM GÌ".
-      2. Chia thành 3 nhóm: Ánh sáng; Chủ thể (chủ yếu điều chỉnh tư thế, tay, chân, mặt, thân mình ...) để ảnh đẹp nhất hợp với phông nền nhất; Thông số kỹ thuật (ISO, Speed, EV) cụ thể bằng số.
-      3. Mỗi nhóm có ít nhất 2 gạch đầu dòng cực ngắn gọn (dưới 10 từ mỗi dòng).
-      4. Phản hồi dưới dạng JSON thuần túy theo cấu trúc sau:
+      Chuyên gia nhiếp ảnh: Phân tích ảnh và hướng dẫn cải thiện.
+      Yêu cầu: Chỉ nêu hành động cụ thể "PHẢI LÀM GÌ", cực ngắn (<10 từ/dòng).
+      Trả về JSON thuần túy (3 nhóm: light, subject, tech):
       {
         "analysis": {
-          "light": ["Gạch đầu dòng 1", "Gạch đầu dòng 2"],
-          "subject": ["Gạch đầu dòng 1", "Gạch đầu dòng 2"],
-          "tech": ["Gạch đầu dòng 1", "Gạch đầu dòng 2"]
+          "light": ["hành động 1", "hành động 2"],
+          "subject": ["chỉnh tư thế/chi tiết 1", "chỉnh tư thế/chi tiết 2"],
+          "tech": ["thông số ISO", "thông số Speed/EV"]
         }
       }
     `;
@@ -67,13 +65,22 @@ export async function POST(req: NextRequest) {
       { text: prompt },
     ]);
 
-    const response = await result.response;
-    clearTimeout(timeoutId); // Xóa timeout nếu thành công
-    const text = response.text();
+    const response = result.response;
+    let rawText = response.text();
+
+    if (!rawText) {
+      const parts: any[] = response.candidates[0].content.parts;
+
+      // Gemini 2.x đôi khi trả về part[0] là 'thought', part[1] mới là 'text'
+      rawText = parts
+        .map((part) => part.text || "")
+        .join("")
+        .trim();
+    }
+    clearTimeout(timeoutId);
 
     // 4. Parse JSON output
-    // Đôi khi Gemini trả về text kèm markdown ```json ... ``` nên cần dọn dẹp
-    const jsonStr = text.replace(/```json|```/g, "").trim();
+    const jsonStr = rawText.replace(/```json|```/g, "").trim();
     const data = JSON.parse(jsonStr);
 
     return NextResponse.json({ success: true, advice: data });

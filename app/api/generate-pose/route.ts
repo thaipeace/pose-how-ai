@@ -7,7 +7,13 @@ export async function POST(req: NextRequest) {
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 15 giây timeout
 
   try {
-    const { pose_summary } = await req.json();
+    // 1. Phải await req.json() để lấy dữ liệu từ stream
+    const body = await req.json();
+
+    // 2. Truy xuất thuộc tính từ object đã parse
+    const { pose_summary } = body;
+    console.log("Received generate-pose request", pose_summary);
+
     const chat = getActiveSession();
 
     if (!chat) {
@@ -16,18 +22,36 @@ export async function POST(req: NextRequest) {
 
     // 1. Dùng Gemini Vision để phân tích ảnh cũ và tạo Prompt cho Mannequin
     const visionPrompt = `
-      Context: Bạn đã thấy ảnh nháp tôi gửi trước đó.
-      Yêu cầu: Sửa tư thế hoăc gợi ý tư thế hợp với ảnh đó theo ý muốn: "${pose_summary}".
-      Nhiệm vụ: Viết 1 đoạn Image Generation Prompt (tiếng Anh) để tạo ra 1 ảnh 3D mannequin gỗ, tư thế đã sửa, nền xám trơn, không vật dụng thừa.
-      Quy tắc: ChỈ trả về đoạn Prompt tiếng Anh, không thêm bất kỳ từ giải thích nào khác.
+      Important: Forget previous JSON format. 
+      Context: You knew my image was not good at person pose reference. 
+      Task: Write a highly detailed Image Generation Prompt for a 3D wooden mannequin to fix person pose better.
+      Required keywords: "3D wooden mannequin, articulated joints, studio lighting, solid grey background, minimalist, high quality, photorealistic wood texture".
+      Constraint: Output ONLY the English prompt string.
     `;
 
-    const result = await chat.sendMessage(visionPrompt);
+    console.log("visionPrompt", visionPrompt);
 
-    const enhancedPrompt = result.response.text().trim();
+    const result = await chat.sendMessage([{ text: visionPrompt }]);
 
-    const fastImageUrl = `https://image.pollinations.ai/prompt/${enhancedPrompt}?width=512&height=512&nologo=true`;
+    const response = result.response;
+    let rawText = response.text();
+    console.log("rawText", rawText);
+    if (!rawText) {
+      const parts: any[] = response.candidates[0].content.parts;
+      console.log("parts", parts);
+      // Gemini 2.x đôi khi trả về part[0] là 'thought', part[1] mới là 'text'
+      rawText = parts
+        .map((part) => part.text || "")
+        .join("")
+        .replace(/./g, "")
+        .trim();
+    }
+
+    const fastImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(
+      rawText
+    )}?width=512&height=512&nologo=true`;
     clearTimeout(timeoutId);
+    console.log("fastImageUrl", fastImageUrl);
 
     return NextResponse.json({
       success: true,
