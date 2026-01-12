@@ -61,12 +61,35 @@ export default function SampleGallery({
 
         {/* Grid hiển thị ảnh mẫu */}
         <div className="aspect-[2/3] w-full bg-gray-100 rounded-2xl overflow-hidden shadow-sm">
-          <img
-            src={img || "/loading-spinner.gif"}
-            alt={img ? "Generated Pose" : "Loading"}
-            loading="lazy" // Lazy load chuẩn trình duyệt
-            className="w-full h-full object-cover transition-transform group-active:scale-95"
-          />
+          {img ? (
+            <img
+              src={img || "/loading-spinner.gif"}
+              alt={img ? "Generated Pose" : "Loading"}
+              className="w-full h-full object-cover transition-transform group-active:scale-95"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center space-y-4 bg-gray-100 animate-pulse">
+              {/* Biểu tượng Spinner quay */}
+              <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+
+              {/* Dòng chữ thông báo */}
+              <div className="flex flex-col items-center">
+                <p className="text-sm font-medium text-gray-500">
+                  AI đang vẽ dáng người...
+                </p>
+                <p className="text-xs text-gray-400">
+                  Thường mất khoảng 7-10 giây
+                </p>
+              </div>
+
+              {/* Các vạch giả lập Skeleton bên dưới (tùy chọn) */}
+              <div className="absolute bottom-4 left-4 right-4 space-y-2">
+                <div className="h-2 bg-gray-300 rounded w-3/4"></div>
+                <div className="h-2 bg-gray-300 rounded w-1/2"></div>
+              </div>
+            </div>
+          )}
         </div>
 
         <button

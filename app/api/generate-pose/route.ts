@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       rawText = parts
         .map((part) => part.text || "")
         .join("")
-        .replace(/./g, "")
+        .replace(/\.+$/, "")
         .trim();
     }
 
