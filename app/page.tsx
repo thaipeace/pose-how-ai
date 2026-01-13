@@ -1,5 +1,6 @@
 import CameraModule from "@/components/CameraModule";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
@@ -16,9 +17,7 @@ export default function Home() {
         {/* Gọi Client Component ở đây */}
         <CameraModule />
 
-        <footer className="mt-10 text-center text-sm text-gray-400">
-          Yêu cầu kết nối HTTPS để hoạt động
-        </footer>
+        <Footer />
       </div>
     </main>
   );
