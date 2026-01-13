@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Menu, X, User, LogOut, LogIn, Globe } from "lucide-react";
+import { Menu, X, User, LogOut, LogIn, Globe, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -13,6 +13,7 @@ export default function HamburgerMenu() {
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const { language, setLanguage, t } = useLanguage();
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     // Check initial user
@@ -25,7 +26,18 @@ export default function HamburgerMenu() {
       setUser(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    // Listen for PWA install prompt
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    };
   }, []);
 
   const handleSignOut = async () => {
@@ -33,8 +45,13 @@ export default function HamburgerMenu() {
     setIsOpen(false);
   };
 
-  const toggleLanguage = () => {
-    setLanguage(language === "en" ? "vi" : "en");
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
   };
 
   return (
@@ -108,49 +125,62 @@ export default function HamburgerMenu() {
 
               {/* Content */}
               <div className="flex-1 overflow-y-auto p-4 py-6">
-                {user ? (
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-xl">
-                      <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
-                        {user.email ? user.email[0].toUpperCase() : <User />}
-                      </div>
-                      <div className="overflow-hidden">
-                        <p className="font-medium text-gray-900 truncate">
-                          {user.user_metadata?.full_name || "User"}
-                        </p>
-                        <p className="text-sm text-gray-500 truncate">{user.email}</p>
-                      </div>
-                    </div>
-
+                <div className="space-y-6">
+                  {/* Common Actions */}
+                  {deferredPrompt && (
                     <button
-                      onClick={handleSignOut}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors font-medium"
+                      onClick={handleInstallClick}
+                      className="w-full flex items-center gap-3 px-4 py-3 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors font-semibold"
                     >
-                      <LogOut className="w-5 h-5" />
-                      {t('signOut')}
+                      <Download className="w-5 h-5" />
+                      {t('installApp')}
                     </button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="p-6 bg-gray-50 rounded-2xl text-center mb-6">
-                      <div className="w-16 h-16 bg-white rounded-full shadow-sm mx-auto flex items-center justify-center mb-4">
-                        <User className="w-8 h-8 text-gray-400" />
-                      </div>
-                      <p className="text-gray-500 text-sm">{t('signInPrompt')}</p>
-                    </div>
+                  )}
 
-                    <button
-                      onClick={() => {
-                        setIsOpen(false);
-                        setIsSignInModalOpen(true);
-                      }}
-                      className="w-full flex items-center justify-between px-6 py-4 bg-black text-white rounded-xl hover:bg-gray-900 transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
-                    >
-                      <span className="font-semibold">{t('signIn')}</span>
-                      <LogIn className="w-5 h-5" />
-                    </button>
-                  </div>
-                )}
+                  {user ? (
+                    <>
+                      <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-xl">
+                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
+                          {user.email ? user.email[0].toUpperCase() : <User />}
+                        </div>
+                        <div className="overflow-hidden">
+                          <p className="font-medium text-gray-900 truncate">
+                            {user.user_metadata?.full_name || "User"}
+                          </p>
+                          <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors font-medium"
+                      >
+                        <LogOut className="w-5 h-5" />
+                        {t('signOut')}
+                      </button>
+                    </>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="p-6 bg-gray-50 rounded-2xl text-center mb-6">
+                        <div className="w-16 h-16 bg-white rounded-full shadow-sm mx-auto flex items-center justify-center mb-4">
+                          <User className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 text-sm">{t('signInPrompt')}</p>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setIsOpen(false);
+                          setIsSignInModalOpen(true);
+                        }}
+                        className="w-full flex items-center justify-between px-6 py-4 bg-black text-white rounded-xl hover:bg-gray-900 transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
+                      >
+                        <span className="font-semibold">{t('signIn')}</span>
+                        <LogIn className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="p-6 border-t border-gray-100 text-center text-xs text-gray-400">
@@ -168,4 +198,3 @@ export default function HamburgerMenu() {
     </>
   );
 }
-

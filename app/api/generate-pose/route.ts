@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveSession } from "../analyze/route";
+import { getActiveSession } from "@/lib/gemini-session";
 
 export async function POST(req: NextRequest) {
   // Tạo một controller để có thể hủy request nếu cần
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     let rawText = response.text();
     console.log("rawText", rawText);
     if (!rawText) {
-      const parts: any[] = response.candidates[0].content.parts;
+      const parts: any[] = response.candidates?.[0].content.parts || [];
       console.log("parts", parts);
       // Gemini 2.x đôi khi trả về part[0] là 'thought', part[1] mới là 'text'
       rawText = parts

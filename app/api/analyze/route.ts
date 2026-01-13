@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { model } from "@/lib/gemini";
+import { setActiveSession } from "@/lib/gemini-session";
 
-let activeChatSession: any = null;
+// let activeChatSession: any = null; // Moved to lib
 
 export async function POST(req: NextRequest) {
   // Tạo một controller để có thể hủy request nếu cần
@@ -24,13 +25,14 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(base64Data, "base64");
 
     // Khởi tạo Chat Session mới
-    activeChatSession = model.startChat({
+    const activeChatSession = model.startChat({
       history: [],
       generationConfig: {
         maxOutputTokens: 5000,
         temperature: 0.2,
       },
     });
+    setActiveSession(activeChatSession);
 
     // 2. Resize + Compress dùng Sharp
     // Gemini Vision hoạt động tốt nhất ở độ phân giải vừa phải (~768px)
@@ -84,7 +86,7 @@ export async function POST(req: NextRequest) {
     let rawText = response.text();
 
     if (!rawText) {
-      const parts: any[] = response.candidates[0].content.parts;
+      const parts: any[] = response.candidates?.[0].content.parts || [];
 
       // Gemini 2.x đôi khi trả về part[0] là 'thought', part[1] mới là 'text'
       rawText = parts
@@ -114,6 +116,4 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export function getActiveSession() {
-  return activeChatSession;
-}
+

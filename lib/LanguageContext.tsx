@@ -14,6 +14,7 @@ const translations: Translations = {
     en: {
         // Hamburger Menu
         menuTitle: "Menu",
+        installApp: "Install App",
         signOut: "Sign Out",
         signInPrompt: "Sign in to save your history and preferences.",
         signIn: "Sign In",
@@ -68,6 +69,7 @@ const translations: Translations = {
     vi: {
         // Hamburger Menu
         menuTitle: "Menu",
+        installApp: "Cài đặt ứng dụng",
         signOut: "Đăng xuất",
         signInPrompt: "Đăng nhập để lưu lịch sử và tùy chọn của bạn.",
         signIn: "Đăng nhập",
@@ -128,7 +130,7 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-    const [language, setLanguage] = useState<Language>("en");
+    const [language, setLanguage] = useState<Language>("vi");
 
     const t = (key: string) => {
         return translations[language][key] || key;
