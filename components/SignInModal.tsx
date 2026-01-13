@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { X } from "lucide-react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 interface SignInModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface SignInModalProps {
 
 export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
 
   const handleLogin = async (provider: "google" | "facebook" | "twitter") => {
     try {
@@ -58,9 +60,9 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
           >
             {/* Header */}
             <div className="relative p-6 text-center border-b border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-800">Welcome Back</h2>
+              <h2 className="text-2xl font-bold text-gray-800">{t('welcomeBack')}</h2>
               <p className="text-sm text-gray-500 mt-1">
-                Sign in to continue to Pose How AI
+                {t('signInContinue')}
               </p>
               <button
                 onClick={onClose}
@@ -74,7 +76,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
             <div className="p-8 space-y-4">
               <SocialButton
                 provider="google"
-                label="Continue with Google"
+                label={t('continueGoogle')}
                 onClick={() => handleLogin("google")}
                 disabled={loading}
               />
@@ -93,8 +95,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
             </div>
 
             <div className="p-6 bg-gray-50 text-center text-xs text-gray-400">
-              By signing in, you agree to our Terms of Service and Privacy
-              Policy.
+              {t('terms')}
             </div>
           </motion.div>
         </>
@@ -171,3 +172,4 @@ function SocialButton({
     </button>
   );
 }
+

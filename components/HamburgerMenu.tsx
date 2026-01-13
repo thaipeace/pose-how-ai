@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Menu, X, User, LogOut, LogIn } from "lucide-react";
+import { Menu, X, User, LogOut, LogIn, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import SignInModal from "./SignInModal";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function HamburgerMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
     // Check initial user
@@ -29,6 +31,10 @@ export default function HamburgerMenu() {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     setIsOpen(false);
+  };
+
+  const toggleLanguage = () => {
+    setLanguage(language === "en" ? "vi" : "en");
   };
 
   return (
@@ -63,13 +69,41 @@ export default function HamburgerMenu() {
             >
               {/* Header */}
               <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                <span className="font-bold text-lg text-gray-800">Menu</span>
+                <span className="font-bold text-lg text-gray-800">{t('menuTitle')}</span>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="p-2 rounded-full hover:bg-gray-200 transition-colors"
                 >
                   <X className="w-5 h-5 text-gray-500" />
                 </button>
+              </div>
+
+              {/* Language Switch */}
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Globe className="w-5 h-5" />
+                  <span className="font-medium text-sm">Language / Ngôn ngữ</span>
+                </div>
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setLanguage("en")}
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${language === "en"
+                        ? "bg-white text-indigo-600 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700"
+                      }`}
+                  >
+                    ENG
+                  </button>
+                  <button
+                    onClick={() => setLanguage("vi")}
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${language === "vi"
+                        ? "bg-white text-indigo-600 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700"
+                      }`}
+                  >
+                    VIE
+                  </button>
+                </div>
               </div>
 
               {/* Content */}
@@ -93,7 +127,7 @@ export default function HamburgerMenu() {
                       className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors font-medium"
                     >
                       <LogOut className="w-5 h-5" />
-                      Sign Out
+                      {t('signOut')}
                     </button>
                   </div>
                 ) : (
@@ -102,7 +136,7 @@ export default function HamburgerMenu() {
                       <div className="w-16 h-16 bg-white rounded-full shadow-sm mx-auto flex items-center justify-center mb-4">
                         <User className="w-8 h-8 text-gray-400" />
                       </div>
-                      <p className="text-gray-500 text-sm">Sign in to save your history and preferences.</p>
+                      <p className="text-gray-500 text-sm">{t('signInPrompt')}</p>
                     </div>
 
                     <button
@@ -112,7 +146,7 @@ export default function HamburgerMenu() {
                       }}
                       className="w-full flex items-center justify-between px-6 py-4 bg-black text-white rounded-xl hover:bg-gray-900 transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
                     >
-                      <span className="font-semibold">Sign In</span>
+                      <span className="font-semibold">{t('signIn')}</span>
                       <LogIn className="w-5 h-5" />
                     </button>
                   </div>
@@ -120,7 +154,7 @@ export default function HamburgerMenu() {
               </div>
 
               <div className="p-6 border-t border-gray-100 text-center text-xs text-gray-400">
-                v1.0.0 • Pose How AI
+                {t('version')}
               </div>
             </motion.div>
           </>
@@ -134,3 +168,4 @@ export default function HamburgerMenu() {
     </>
   );
 }
+

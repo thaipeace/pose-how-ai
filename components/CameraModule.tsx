@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import { useState, useRef, useEffect } from "react";
 import SampleGallery from "./SampleGallery";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function CameraModule() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -20,7 +21,7 @@ export default function CameraModule() {
   >(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showSamples, setShowSamples] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const { t, language } = useLanguage();
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -28,7 +29,7 @@ export default function CameraModule() {
 
     // Kiểm tra định dạng
     if (!file.type.startsWith("image/")) {
-      alert("Vui lòng chọn tệp hình ảnh.");
+      alert(t('alertImageFile'));
       return;
     }
 
@@ -59,7 +60,7 @@ export default function CameraModule() {
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: capturedImage }),
+        body: JSON.stringify({ image: capturedImage, language }),
       });
 
       const data = await response.json();
@@ -70,7 +71,7 @@ export default function CameraModule() {
         throw new Error(data.error);
       }
     } catch (error) {
-      setAnalysisResult("Không thể kết nối đến server.");
+      setAnalysisResult(t('serverError'));
     } finally {
       setIsAnalyzing(false);
     }
@@ -117,7 +118,7 @@ export default function CameraModule() {
         videoRef.current.onloadedmetadata = () => setIsStreaming(true);
       }
     } catch (err) {
-      alert("Lỗi camera!");
+      alert("Lỗi camera! " + err);
     }
   };
 
@@ -187,26 +188,26 @@ export default function CameraModule() {
         {isAnalyzing && (
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center text-white p-6 text-center animate-in fade-in">
             <div className="w-12 h-12 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p className="text-lg font-bold">Đang phân tích ảnh...</p>
+            <p className="text-lg font-bold">{t('analyzing')}</p>
             <p className="text-xs text-gray-400 mt-2">
-              Gemini đang xem xét ánh sáng và bố cục của bạn
+              {t('geminiThinking')}
             </p>
           </div>
         )}
 
         {/* FALLBACK KHI LỖI */}
-        {analysisResult == "Không thể kết nối đến server." && (
+        {analysisResult == t('serverError') && (
           <div className="absolute inset-0 bg-rose-900/90 flex flex-col items-center justify-center text-white p-6 text-center">
             <span className="text-4xl mb-2">⚠️</span>
-            <p className="font-bold">Kết nối thất bại</p>
+            <p className="font-bold">{t('connectionFailed')}</p>
             <p className="text-sm opacity-80 mb-4">
-              Sóng yếu hoặc Server quá tải.
+              {t('connectionError')}
             </p>
             <button
               onClick={handleAnalyze}
               className="px-6 py-2 bg-white text-rose-900 rounded-full font-bold active:scale-95"
             >
-              Thử lại
+              {t('tryAgain')}
             </button>
           </div>
         )}
@@ -217,13 +218,13 @@ export default function CameraModule() {
       {analysisResult && typeof analysisResult !== "string" && (
         <div className="mt-4 space-y-4 p-5 bg-white border border-gray-100 rounded-3xl shadow-xl animate-in fade-in slide-in-from-bottom-4">
           <h3 className="text-lg font-bold text-gray-800 border-b pb-2">
-            💡 Hướng dẫn chụp đẹp
+            {t('photoTips')}
           </h3>
 
           {/* Nhóm Ánh sáng */}
           <div>
             <h4 className="font-bold text-amber-600 text-sm uppercase">
-              ☀️ Ánh sáng
+              {t('lighting')}
             </h4>
             <ul className="list-disc list-inside text-gray-600 text-sm ml-2">
               {analysisResult.light.map((item: string, i: number) => (
@@ -235,7 +236,7 @@ export default function CameraModule() {
           {/* Nhóm Chủ thể */}
           <div>
             <h4 className="font-bold text-blue-600 text-sm uppercase">
-              🧍 Chủ thể
+              {t('subject')}
             </h4>
             <ul className="list-disc list-inside text-gray-600 text-sm ml-2">
               {analysisResult.subject.map((item: string, i: number) => (
@@ -247,7 +248,7 @@ export default function CameraModule() {
           {/* Nhóm Thông số kỹ thuật */}
           <div>
             <h4 className="font-bold text-emerald-600 text-sm uppercase">
-              ⚙️ Thông số kỹ thuật
+              {t('techSpecs')}
             </h4>
             <ul className="list-disc list-inside text-gray-600 text-sm ml-2 bg-gray-50 p-2 rounded-lg">
               {analysisResult.tech.map((item: string, i: number) => (
@@ -278,13 +279,13 @@ export default function CameraModule() {
               onClick={takePhoto}
               className="w-full py-4 bg-rose-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-transform"
             >
-              📸 Chụp Ảnh
+              {t('takePhoto')}
             </button>
             <button
               onClick={() => fileInputRef.current?.click()}
               className="py-4 bg-gray-800 text-white font-bold rounded-2xl flex items-center justify-center gap-2"
             >
-              🖼️ Thư viện
+              {t('gallery')}
             </button>
           </div>
         ) : capturedImage ? (
@@ -293,14 +294,14 @@ export default function CameraModule() {
               onClick={startCamera}
               className="py-4 bg-gray-200 text-gray-800 font-bold rounded-2xl"
             >
-              🔄 Làm lại
+              {t('retake')}
             </button>
             {analysisResult && (
               <button
                 onClick={() => setShowSamples(true)}
                 className="text-xs font-bold py-2 px-4 bg-white border border-gray-200 shadow-sm rounded-full text-indigo-600 active:scale-95 transition-all"
               >
-                🖼️ Xem hình mẫu
+                {t('viewSamples')}
               </button>
             )}
             {!analysisResult && (
@@ -308,7 +309,7 @@ export default function CameraModule() {
                 onClick={handleAnalyze}
                 className="py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200"
               >
-                ✨ Phân tích
+                {t('analyze')}
               </button>
             )}
           </div>
@@ -318,20 +319,20 @@ export default function CameraModule() {
               onClick={startCamera}
               className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl"
             >
-              Mở Camera
+              {t('openCamera')}
             </button>
             <button
               onClick={() => fileInputRef.current?.click()}
               className="py-4 bg-gray-800 text-white font-bold rounded-2xl flex items-center justify-center gap-2"
             >
-              🖼️ Thư viện
+              {t('gallery')}
             </button>
           </div>
         )}
       </div>
 
       <p className="text-center text-[10px] text-gray-400 uppercase tracking-widest font-medium">
-        Hỗ trợ Auto-Rotate Canvas
+        {t('autoRotate')}
       </p>
 
       {/* HIỂN THỊ MODAL KHI CẦN */}
@@ -344,3 +345,4 @@ export default function CameraModule() {
     </div>
   );
 }
+

@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { Copy, Check, Heart, Wallet, CreditCard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function Footer() {
   const [copied, setCopied] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   // Placeholder data - User should update these
   const donationInfo = {
@@ -32,7 +34,7 @@ export default function Footer() {
         {/* Header with Icon */}
         <div className="flex items-center space-x-2 text-rose-500">
           <Heart className="w-5 h-5 fill-current animate-pulse" />
-          <span className="font-semibold text-gray-800">Hỗ trợ dự án</span>
+          <span className="font-semibold text-gray-800">{t('supportProject')}</span>
         </div>
 
         <div className="w-full max-w-sm px-4 space-y-4">
@@ -42,7 +44,7 @@ export default function Footer() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2 text-teal-600">
                 <Wallet className="w-4 h-4" />
-                <span className="text-sm font-bold">Ủng hộ qua USDT</span>
+                <span className="text-sm font-bold">{t('donateUSDT')}</span>
               </div>
               <span className="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                 {donationInfo.usdt.network}
@@ -87,7 +89,7 @@ export default function Footer() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2 text-blue-600">
                 <CreditCard className="w-4 h-4" />
-                <span className="text-sm font-bold">PayPal</span>
+                <span className="text-sm font-bold">{t('paypal')}</span>
               </div>
             </div>
 
@@ -108,7 +110,7 @@ export default function Footer() {
                 rel="noopener noreferrer"
                 className="flex px-4 py-2 bg-[#0070BA] text-white rounded-lg items-center justify-center font-medium text-xs hover:bg-[#005ea6] transition-colors shadow-sm"
               >
-                Gửi
+                {t('send')}
               </a>
             </div>
           </div>
@@ -116,7 +118,7 @@ export default function Footer() {
         </div>
 
         <div className="text-xs text-center text-gray-400 max-w-xs mx-auto">
-          <p>Yêu cầu kết nối HTTPS để hoạt động camera.</p>
+          <p>{t('httpsRequired')}</p>
         </div>
       </div>
     </footer>

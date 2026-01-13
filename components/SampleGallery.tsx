@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 interface SampleGalleryProps {
   analysisResult: any;
@@ -13,6 +14,7 @@ export default function SampleGallery({
 }: SampleGalleryProps) {
   const [img, setImg] = useState();
   const [isGenerating, setIsGenerating] = useState(false);
+  const { t } = useLanguage();
 
   const handleGeneratePose = async () => {
     setIsGenerating(true);
@@ -49,7 +51,7 @@ export default function SampleGallery({
 
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-gray-800">
-            Hình mẫu tham khảo
+            {t('sampleGalleryTitle')}
           </h2>
           <button
             onClick={onClose}
@@ -76,10 +78,10 @@ export default function SampleGallery({
               {/* Dòng chữ thông báo */}
               <div className="flex flex-col items-center">
                 <p className="text-sm font-medium text-gray-500">
-                  AI đang vẽ dáng người...
+                  {t('aiGenerating')}
                 </p>
                 <p className="text-xs text-gray-400">
-                  Thường mất khoảng 7-10 giây
+                  {t('aiGeneratingTime')}
                 </p>
               </div>
 
@@ -96,7 +98,7 @@ export default function SampleGallery({
           onClick={onClose}
           className="w-full mt-8 py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl"
         >
-          Quay lại chụp ảnh
+          {t('backToCamera')}
         </button>
       </div>
     </div>

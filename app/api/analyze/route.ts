@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 giây timeout
 
   try {
-    const { image } = await req.json(); // Nhận chuỗi base64 từ client
+    const { image, language } = await req.json(); // Nhận chuỗi base64 và ngôn ngữ từ client
 
     if (!image) {
       return NextResponse.json(
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const finalBase64 = compressedBuffer.toString("base64");
 
     // 3. Xây dựng Prompt và gọi Gemini Vision
-    const prompt = `
+    const promptVi = `
       Chuyên gia nhiếp ảnh: Phân tích ảnh và hướng dẫn cải thiện.
       Yêu cầu: Chỉ nêu hành động cụ thể "PHẢI LÀM GÌ", cực ngắn (<10 từ/dòng).
       Trả về JSON thuần túy (3 nhóm: light, subject, tech):
@@ -54,6 +54,21 @@ export async function POST(req: NextRequest) {
         }
       }
     `;
+
+    const promptEn = `
+      Photography Expert: Analyze the photo and provide improvement/posing tips.
+      Requirement: State specific "ACTIONABLE STEPS" only, extremely short (<10 words/line).
+      Return pure JSON (3 groups: light, subject, tech):
+      {
+        "analysis": {
+          "light": ["action 1", "action 2"],
+          "subject": ["pose adjustment 1", "detail adjustment 2"],
+          "tech": ["ISO settings", "Speed/EV settings"]
+        }
+      }
+    `;
+
+    const prompt = language === 'vi' ? promptVi : promptEn;
 
     const result = await activeChatSession.sendMessage([
       {
