@@ -1,43 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { usePoseStore } from "@/lib/store";
 import { useLanguage } from "@/lib/LanguageContext";
 
 interface SampleGalleryProps {
-  analysisResult: any;
   onClose: () => void;
 }
 
 export default function SampleGallery({
   onClose,
-  analysisResult,
 }: SampleGalleryProps) {
-  const [img, setImg] = useState();
-  const [isGenerating, setIsGenerating] = useState(false);
   const { t } = useLanguage();
+  const generatedImage = usePoseStore((state) => state.generatedImage);
 
-  const handleGeneratePose = async () => {
-    setIsGenerating(true);
-    try {
-      const res = await fetch("/api/generate-pose", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pose_summary: analysisResult.subject.join(""),
-        }),
-      });
-
-      const data = await res.json();
-      console.log("Pose generation response:", data);
-      setImg(data.imageUrl);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  useEffect(() => {
-    handleGeneratePose();
-  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -63,10 +38,10 @@ export default function SampleGallery({
 
         {/* Grid hiển thị ảnh mẫu */}
         <div className="aspect-[2/3] w-full bg-gray-100 rounded-2xl overflow-hidden shadow-sm">
-          {img ? (
+          {generatedImage ? (
             <img
-              src={img || "/loading-spinner.gif"}
-              alt={img ? "Generated Pose" : "Loading"}
+              src={generatedImage || "/loading-spinner.gif"}
+              alt={generatedImage ? "Generated Pose" : "Loading"}
               className="w-full h-full object-cover transition-transform group-active:scale-95"
               referrerPolicy="no-referrer"
             />

@@ -46,27 +46,31 @@ export async function POST(req: NextRequest) {
     // 3. Xây dựng Prompt và gọi Gemini Vision
     const promptVi = `
       Chuyên gia nhiếp ảnh: Phân tích ảnh và hướng dẫn cải thiện.
-      Yêu cầu: Chỉ nêu hành động cụ thể "PHẢI LÀM GÌ", cực ngắn (<10 từ/dòng).
-      Trả về JSON thuần túy (3 nhóm: light, subject, tech):
+      Yêu cầu 1: Chỉ nêu hành động cụ thể "PHẢI LÀM GÌ", cực ngắn (<10 từ/dòng).
+      Yêu cầu 2: Viết thêm một mô tả tiếng Anh chi tiết để tạo ảnh Mannequin 3D mô phỏng lại dáng pose nên có.
+      Trả về JSON thuần túy (4 nhóm: light, subject, tech, pose_prompt):
       {
         "analysis": {
           "light": ["hành động 1", "hành động 2"],
           "subject": ["chỉnh tư thế/chi tiết 1", "chỉnh tư thế/chi tiết 2"],
           "tech": ["thông số ISO", "thông số Speed/EV"]
-        }
+        },
+        "pose_prompt": "highly detailed English prompt for 3D wooden mannequin..."
       }
     `;
 
     const promptEn = `
       Photography Expert: Analyze the photo and provide improvement/posing tips.
-      Requirement: State specific "ACTIONABLE STEPS" only, extremely short (<10 words/line).
-      Return pure JSON (3 groups: light, subject, tech):
+      Requirement 1: State specific "ACTIONABLE STEPS" only, extremely short (<10 words/line).
+      Requirement 2: Write a detailed Image Generation Prompt for a 3D wooden mannequin to fix person pose better.
+      Return pure JSON (4 groups: light, subject, tech, pose_prompt):
       {
         "analysis": {
           "light": ["action 1", "action 2"],
           "subject": ["pose adjustment 1", "detail adjustment 2"],
           "tech": ["ISO settings", "Speed/EV settings"]
-        }
+        },
+        "pose_prompt": "highly detailed English prompt for 3D wooden mannequin..."
       }
     `;
 
@@ -100,7 +104,16 @@ export async function POST(req: NextRequest) {
     const jsonStr = rawText.replace(/```json|```/g, "").trim();
     const data = JSON.parse(jsonStr);
 
-    return NextResponse.json({ success: true, advice: data });
+    // 5. Generate Image URL from the prompt
+    // Nếu prompt không tồn tại, fallback về phân tích subject
+    const imagePrompt = data.pose_prompt || (data.analysis.subject || []).join(", ");
+    const fullImagePrompt = `${imagePrompt}, 3D wooden mannequin, articulated joints, studio lighting, solid grey background, minimalist, high quality, photorealistic wood texture`;
+
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(
+      fullImagePrompt
+    )}?width=512&height=512&nologo=true`;
+
+    return NextResponse.json({ success: true, advice: data, imageUrl });
   } catch (error: any) {
     clearTimeout(timeoutId);
     if (error.name === "AbortError") {

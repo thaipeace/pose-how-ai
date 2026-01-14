@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { useState, useRef, useEffect } from "react";
 import SampleGallery from "./SampleGallery";
 import { useLanguage } from "@/lib/LanguageContext";
+import { usePoseStore } from "@/lib/store";
 
 export default function CameraModule() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -12,6 +13,9 @@ export default function CameraModule() {
 
   const [isStreaming, setIsStreaming] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+
+  const setGeneratedImage = usePoseStore((state) => state.setGeneratedImage);
+  const setIsGeneratingPose = usePoseStore((state) => state.setIsGeneratingPose);
 
   // State lưu góc xoay vật lý (0, 90, -90)
   const [physicalAngle, setPhysicalAngle] = useState(0);
@@ -67,6 +71,15 @@ export default function CameraModule() {
 
       if (data.success) {
         setAnalysisResult(data.advice.analysis);
+
+        // --- Trigger Pose Generation with Zustand ---
+        // Image URL is now returned directly from the analyze API
+        if (data.imageUrl) {
+          setGeneratedImage(data.imageUrl);
+        } else {
+          console.warn("No image URL returned from analysis");
+          setGeneratedImage(null);
+        }
       } else {
         throw new Error(data.error);
       }
@@ -338,7 +351,6 @@ export default function CameraModule() {
       {/* HIỂN THỊ MODAL KHI CẦN */}
       {showSamples && (
         <SampleGallery
-          analysisResult={analysisResult}
           onClose={() => setShowSamples(false)}
         />
       )}
