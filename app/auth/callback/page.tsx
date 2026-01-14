@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Suspense } from 'react';
+import { saveUserProfile } from '@/lib/user';
 
 function CallbackContent() {
   const router = useRouter();
@@ -24,8 +25,10 @@ function CallbackContent() {
         // supabase-js automatically persists to localStorage
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-        if (session) {
+        if (session && session.user) {
           console.log('Session established and stored in localStorage');
+          // Save user profile to database
+          await saveUserProfile(session.user);
         } else if (sessionError) {
           console.error('Session error:', sessionError);
         }

@@ -8,6 +8,8 @@ import { User as SupabaseUser } from "@supabase/supabase-js";
 import SignInModal from "./SignInModal";
 import { useLanguage } from "@/lib/LanguageContext";
 
+import { saveUserProfile } from "@/lib/user";
+
 export default function HamburgerMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
@@ -22,8 +24,13 @@ export default function HamburgerMenu() {
     });
 
     // Listen for changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      if (event === 'SIGNED_IN' && currentUser) {
+        saveUserProfile(currentUser);
+      }
     });
 
     // Listen for PWA install prompt
@@ -105,8 +112,8 @@ export default function HamburgerMenu() {
                   <button
                     onClick={() => setLanguage("en")}
                     className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${language === "en"
-                        ? "bg-white text-indigo-600 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
                       }`}
                   >
                     ENG
@@ -114,8 +121,8 @@ export default function HamburgerMenu() {
                   <button
                     onClick={() => setLanguage("vi")}
                     className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${language === "vi"
-                        ? "bg-white text-indigo-600 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
                       }`}
                   >
                     VIE

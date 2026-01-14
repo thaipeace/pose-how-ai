@@ -10,11 +10,11 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col items-center p-4">
-      <div className="w-full max-w-md mt-10">
-        <header className="mb-8 flex flex-col items-center relative">
-          <div className="absolute right-0 top-0">
-            <HamburgerMenu />
-          </div>
+      <div className="w-full max-w-md mt-10 relative">
+        <div className="absolute right-0 top-[-3rem]">
+          <HamburgerMenu />
+        </div>
+        <header className="mb-8 flex flex-col items-center">
           <h1 className="text-3xl font-extrabold text-gray-900">{t('pageTitle')}</h1>
           <p className="text-gray-500">{t('pageSubtitle')}</p>
         </header>
