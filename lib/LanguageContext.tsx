@@ -45,6 +45,7 @@ const translations: Translations = {
         lighting: "☀️ Lighting",
         subject: "🧍 Subject",
         techSpecs: "⚙️ Technical Specs",
+        switchCamera: "Switch Camera",
         serverError: "Cannot connect to server.",
 
         // Sample Gallery
@@ -100,6 +101,7 @@ const translations: Translations = {
         lighting: "☀️ Ánh sáng",
         subject: "🧍 Chủ thể",
         techSpecs: "⚙️ Thông số kỹ thuật",
+        switchCamera: "Đổi Camera",
         serverError: "Không thể kết nối đến server.",
 
         // Sample Gallery
